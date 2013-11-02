@@ -26,7 +26,7 @@ std_msgs::Int32 l_enc_msg;
 std_msgs::Int32 r_enc_msg;
 
 ros::Publisher left_encoder_pub("left_encoder", &l_enc_msg);
-ros::Publisher right_encoder_pub("left_encoder", &r_enc_msg);
+ros::Publisher right_encoder_pub("right_encoder", &r_enc_msg);
 
 // Placeholders for motor commands
 int lm_cmd = 0;
@@ -99,10 +99,16 @@ void setup()
 
 void loop()
 {
+  // Get Freshest Values
+  updateEncoderReading();
+  l_enc_msg.data = L_LastEncoderValue;
+  r_enc_msg.data = R_LastEncoderValue;
+  
+  // Publish Data
   left_encoder_pub.publish( &l_enc_msg );
   right_encoder_pub.publish( &r_enc_msg );
   nh.spinOnce();
   //pmd.setSpeeds(lm_cmd, rm_cmd);
-  delay(5);
+  delay(75);
 }
 
