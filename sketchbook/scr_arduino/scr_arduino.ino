@@ -109,6 +109,6 @@ void loop()
   right_encoder_pub.publish( &r_enc_msg );
   nh.spinOnce();
   //pmd.setSpeeds(lm_cmd, rm_cmd);
-  delay(75);
+  delay(10);
 }
 
