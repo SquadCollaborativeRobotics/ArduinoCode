@@ -1,16 +1,18 @@
+///Runs the HCSR04 ultrasonic sensor and publishes over the ultrasonic topic
 
 
-#define trigPin 13
-#define echoPin 12
-#define led 11
-#define led2 10
+#define TRIGGER_PIN  12  // Arduino pin tied to trigger pin on the ultrasonic sensor.
+#define ECHO_PIN     11  // Arduino pin tied to echo pin on the ultrasonic sensor.
+#define MAX_DISTANCE 200 // Maximum distance we want to ping for (in centimeters). Maximum sensor distance is rated at 400-500cm.
+
+
+ros::NodeHandle  nh;
+
+std_msgs::Float32 temp_msg;
+ros::Publisher pub_temp("ultrasonic", &ultrasonic_msg);
 
 void setup() {
   Serial.begin (9600);
-  pinMode(trigPin, OUTPUT);
-  pinMode(echoPin, INPUT);
-  pinMode(led, OUTPUT);
-  pinMode(led2, OUTPUT);
 }
 
 void loop() {
