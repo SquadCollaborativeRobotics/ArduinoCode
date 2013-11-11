@@ -4,18 +4,20 @@
    Arduino Mega 2560 R3
  */
 
-
+// ROS Includes
 #include <ros.h>
 #include <std_msgs/Int32.h>
 #include <std_msgs/Float32.h>
-//#include <Event.h>
-#include <Timer.h>
-#include <Encoder.h>
-#include <PololuQik.h>
-#include <SoftwareSerial.h>
 #include <scr_proto/DiffCommand.h>
 
-// Encoder stuff
+// Speed Controller Includes
+#include <Timer.h>
+#include <Encoder.h>
+#include <PID_v1.h>
+#include <PololuQik.h>
+#include <SoftwareSerial.h>
+
+// Encoder Pins and Variables
 #define LEFT_ENCODER_A_PIN 2
 #define LEFT_ENCODER_B_PIN 4
 #define RIGHT_ENCODER_A_PIN 3
@@ -24,10 +26,10 @@
 #define TICKS_PER_REVOLUTION 750
 #define PI 3.141592654
 
-// Pololu Motor Driver Connections
+// Pololu Motor Driver Pins
 #define PMD_TX 14
 #define PMD_RX 15
-#define PMD_RESET 8   
+#define PMD_RESET 8
 
 // Ros Initialization stuff
 ros::NodeHandle_<ArduinoHardware, 5, 5, 256, 256>  nh;
@@ -54,8 +56,12 @@ double L_WheelVelocity = 0.0;
 double R_WheelVelocity = 0.0;
 
 // Placeholders for motor commands
-int lm_cmd = 0;
-int rm_cmd = 0;
+double lm_cmd = 0;
+double rm_cmd = 0;
+
+// Placeholders for speed commands
+double lw_cmd_spd = 0;
+double rw_cmd_spd = 0;
 
 // Encoder initialization
 Encoder L_DCMotorEncoder(LEFT_ENCODER_A_PIN, LEFT_ENCODER_B_PIN);
@@ -69,10 +75,28 @@ float R_EncoderVelocity = 0; // Radians per second
 long R_LastEncoderValue = 0;
 double R_EncoderAngle = 0; // In revolutions (360.0 degrees = 1.0)
 
+// Speed Controller Initialization
+// Input, Output, Setpoint, P, I, D, DIRECT)
+PID L_DCMotorPID(&L_WheelVelocity,
+                 &lm_cmd,
+                 &lw_cmd_spd,
+                 0.55,
+                 0.0,
+                 0.12,
+                 DIRECT);
+
+PID R_DCMotorPID(&R_WheelVelocity,
+                 &rm_cmd,
+                 &rw_cmd_spd,
+                 0.55,
+                 0.0,
+                 0.12,
+                 DIRECT);
+
 // Motor Callbacks
 void MotorCallback(const scr_proto::DiffCommand& motor_com){
-  lm_cmd = motor_com.left_motor;
-  rm_cmd = motor_com.right_motor;
+  lw_cmd_spd = motor_com.left_motor;
+  rw_cmd_spd = motor_com.right_motor;
 }
 
 void updateEncoderReading() {
@@ -107,7 +131,7 @@ ros::Subscriber<scr_proto::DiffCommand> motor_sub("motor_command", MotorCallback
 
 
 // Rx, Tx, Reset Pins
-PololuQik2s12v10 pmd(PMD_RX, PMD_TX, 8);
+PololuQik2s12v10 pmd(PMD_RX, PMD_TX, PMD_RESET);
 
 void setup()
 {
@@ -152,6 +176,6 @@ void loop()
   // Write Speeds to motor driver
   pmd.setSpeeds(lm_cmd, rm_cmd);
   
-  delay(10);
+  delay(50);
 }
 
