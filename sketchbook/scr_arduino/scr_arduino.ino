@@ -11,9 +11,9 @@
 #include <Event.h>
 #include <Timer.h>
 #include <Encoder.h>
-#include <PololuQik.h>
-#include <SoftwareSerial.h>
-#include <scr_proto/DiffCommand.h>
+//#include <PololuQik.h>
+//#include <SoftwareSerial.h>
+// #include <scr_proto/DiffCommand.h>
 
 // Encoder stuff
 #define LEFT_ENCODER_A_PIN 2
@@ -41,7 +41,7 @@ std_msgs::Float64 l_wheel_msg;
 std_msgs::Float64 r_wheel_msg;
 
 // Motors Command Message
-scr_proto::DiffCommand motor_msg;
+// scr_proto::DiffCommand motor_msg;
 
 // Initialize Publishers
 ros::Publisher left_encoder_pub("left_encoder", &l_enc_msg);
@@ -70,10 +70,10 @@ long R_LastEncoderValue = 0;
 double R_EncoderAngle = 0; // In revolutions (360.0 degrees = 1.0)
 
 // Motor Callbacks
-void MotorCallback(const scr_proto::DiffCommand& motor_com){
-  lm_cmd = motor_com.left_motor;
-  rm_cmd = motor_com.right_motor;
-}
+// void MotorCallback(const scr_proto::DiffCommand& motor_com){
+//   lm_cmd = motor_com.left_motor;
+//   rm_cmd = motor_com.right_motor;
+// }
 
 void updateEncoderReading() {
   // Get raw ticks
@@ -103,23 +103,22 @@ void updateEncoderReading() {
   R_LastEncoderValue = R_encoderValue;
 }
 
-ros::Subscriber<scr_proto::DiffCommand> motor_sub("motor_command", MotorCallback);
+// ros::Subscriber<scr_proto::DiffCommand> motor_sub("motor_command", MotorCallback);
 
 
 // Rx, Tx, Reset Pins
-PololuQik2s12v10 pmd(PMD_RX, PMD_TX, 8);
+//PololuQik2s12v10 pmd(PMD_RX, PMD_TX, 8);
 
 void setup()
 {
   // ROS Stuff
   nh.initNode();
-  nh.subscribe(leftMotorSub);
-  nh.subscribe(rightMotorSub);
+  // nh.subscribe(motor_sub);
   nh.advertise(left_encoder_pub);
   nh.advertise(right_encoder_pub);
 
   // Motor Driver Init
-  pmd.init();
+  //pmd.init();
 }
 
 void loop()
@@ -143,7 +142,7 @@ void loop()
   nh.spinOnce();
   
   // Write Speeds to motor driver
-  pmd.setSpeeds(lm_cmd, rm_cmd);
+  //pmd.setSpeeds(lm_cmd, rm_cmd);
   
   delay(10);
 }
