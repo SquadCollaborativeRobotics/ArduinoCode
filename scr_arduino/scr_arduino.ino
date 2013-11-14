@@ -76,21 +76,25 @@ long R_LastEncoderValue = 0;
 double R_EncoderAngle = 0; // In revolutions (360.0 degrees = 1.0)
 
 // Speed Controller Initialization
-// Input, Output, Setpoint, P, I, D, DIRECT)
+
+double L_PIDout = 0;
+double R_PIDout = 0;
+
+// Input, Output, Setpoint, P, I, D, DIRECT/REVERSE)
 PID L_DCMotorPID(&L_WheelVelocity,
-                 &lm_cmd,
+                 &L_PIDout,
                  &lw_cmd_spd,
-                 3.5,
-                 .001,
-                 .15,
+                 1.5,
+                 0.0,
+                 0.1,
                  REVERSE);
 
 PID R_DCMotorPID(&R_WheelVelocity,
-                 &rm_cmd,
+                 &R_PIDout,
                  &rw_cmd_spd,
-                 3.5,
-                 .001,
-                 .15,
+                 1.5,
+                 0.0,
+                 0.1,
                  REVERSE);
 
 // Motor Callbacks
@@ -152,10 +156,10 @@ void setup()
   // PID Setup
   L_DCMotorPID.SetMode(AUTOMATIC);
   L_DCMotorPID.SetOutputLimits(-127, 127);
-  L_DCMotorPID.SetSampleTime(75);
+  L_DCMotorPID.SetSampleTime(20);
   R_DCMotorPID.SetMode(AUTOMATIC);
   R_DCMotorPID.SetOutputLimits(-127, 127);
-  R_DCMotorPID.SetSampleTime(75n);
+  R_DCMotorPID.SetSampleTime(20);
   
   // Motor Driver Init
   pmd.init();
@@ -169,6 +173,10 @@ void loop()
   // Compute New Control Values
   L_DCMotorPID.Compute();
   R_DCMotorPID.Compute();
+
+  // Update motor command
+  lm_cmd += L_PIDout;
+  rm_cmd += R_PIDout;
 
   // Populate messages
   l_enc_msg.data = lm_cmd;
