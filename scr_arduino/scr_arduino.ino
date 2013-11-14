@@ -8,7 +8,7 @@
 #include <ros.h>
 #include <std_msgs/Int32.h>
 #include <std_msgs/Float32.h>
-#include <scr_proto/DiffCommand.h>
+#include <scr_proto/SpeedCommand.h>
 
 // Speed Controller Includes
 #include <Timer.h>
@@ -43,12 +43,12 @@ std_msgs::Float32 l_wheel_msg;
 std_msgs::Float32 r_wheel_msg;
 
 // Motors Command Message
-scr_proto::DiffCommand motor_msg;
+scr_proto::SpeedCommand motor_msg;
 
 // Initialize Publishers
-//ros::Publisher left_encoder_pub("left_encoder", &l_enc_msg);
+ros::Publisher left_encoder_pub("left_encoder", &l_enc_msg);
 ros::Publisher left_wheel_pub("lw_speed", &l_wheel_msg);
-//ros::Publisher right_encoder_pub("right_encoder", &l_enc_msg);
+ros::Publisher right_encoder_pub("right_encoder", &l_enc_msg);
 ros::Publisher right_wheel_pub("rw_speed", &r_wheel_msg);
 
 // Placeholders for wheel speeds in rad/s
@@ -80,23 +80,23 @@ double R_EncoderAngle = 0; // In revolutions (360.0 degrees = 1.0)
 PID L_DCMotorPID(&L_WheelVelocity,
                  &lm_cmd,
                  &lw_cmd_spd,
-                 0.55,
-                 0.0,
-                 0.12,
-                 DIRECT);
+                 3.5,
+                 .001,
+                 .15,
+                 REVERSE);
 
 PID R_DCMotorPID(&R_WheelVelocity,
                  &rm_cmd,
                  &rw_cmd_spd,
-                 0.55,
-                 0.0,
-                 0.12,
-                 DIRECT);
+                 3.5,
+                 .001,
+                 .15,
+                 REVERSE);
 
 // Motor Callbacks
-void MotorCallback(const scr_proto::DiffCommand& motor_com){
-  lw_cmd_spd = motor_com.left_motor;
-  rw_cmd_spd = motor_com.right_motor;
+void MotorCallback(const scr_proto::SpeedCommand& motor_com){
+  lw_cmd_spd = motor_com.left_motor_w;
+  rw_cmd_spd = motor_com.right_motor_w;
 }
 
 void updateEncoderReading() {
@@ -112,7 +112,7 @@ void updateEncoderReading() {
   
   // Get velocity in ticks/sec
   L_EncoderVelocity = 1000.0*(float)(L_encoderValue-L_LastEncoderValue)/(float)ENCODER_TIME_DELAY_MS;
-  R_EncoderVelocity = 1000.0*(float)(R_encoderValue-L_LastEncoderValue)/(float)ENCODER_TIME_DELAY_MS;
+  R_EncoderVelocity = 1000.0*(float)(R_encoderValue-R_LastEncoderValue)/(float)ENCODER_TIME_DELAY_MS;
 
   // Convert to revolutions/sec
   L_EncoderVelocity /= (double)TICKS_PER_REVOLUTION;
@@ -127,7 +127,7 @@ void updateEncoderReading() {
   R_LastEncoderValue = R_encoderValue;
 }
 
-ros::Subscriber<scr_proto::DiffCommand> motor_sub("motor_command", MotorCallback);
+ros::Subscriber<scr_proto::SpeedCommand> motor_sub("speed_command", MotorCallback);
 
 
 // Rx, Tx, Reset Pins
@@ -142,12 +142,20 @@ void setup()
   nh.subscribe(motor_sub);
   
   // Encoder Pubs
-  //nh.advertise(left_encoder_pub);
-  //nh.advertise(right_encoder_pub);
+  nh.advertise(left_encoder_pub);
+  nh.advertise(right_encoder_pub);
   
   // Wheel Speeds in rad/s
   nh.advertise(right_wheel_pub);
   nh.advertise(left_wheel_pub);
+
+  // PID Setup
+  L_DCMotorPID.SetMode(AUTOMATIC);
+  L_DCMotorPID.SetOutputLimits(-127, 127);
+  L_DCMotorPID.SetSampleTime(75);
+  R_DCMotorPID.SetMode(AUTOMATIC);
+  R_DCMotorPID.SetOutputLimits(-127, 127);
+  R_DCMotorPID.SetSampleTime(75n);
   
   // Motor Driver Init
   pmd.init();
@@ -158,15 +166,19 @@ void loop()
   // Get Freshest Values
   updateEncoderReading();
 
+  // Compute New Control Values
+  L_DCMotorPID.Compute();
+  R_DCMotorPID.Compute();
+
   // Populate messages
-  //l_enc_msg.data = L_LastEncoderValue;
-  //r_enc_msg.data = R_LastEncoderValue;
+  l_enc_msg.data = lm_cmd;
+  r_enc_msg.data = rm_cmd;
   l_wheel_msg.data = L_WheelVelocity;
   r_wheel_msg.data = R_WheelVelocity;
 
   // Publish Data
-  //left_encoder_pub.publish( &l_enc_msg );
-  //right_encoder_pub.publish( &r_enc_msg );
+  left_encoder_pub.publish( &l_enc_msg );
+  right_encoder_pub.publish( &r_enc_msg );
   left_wheel_pub.publish( &l_wheel_msg );
   right_wheel_pub.publish( &r_wheel_msg );
   
@@ -176,6 +188,6 @@ void loop()
   // Write Speeds to motor driver
   pmd.setSpeeds(lm_cmd, rm_cmd);
   
-  delay(50);
+  delay(25);
 }
 
