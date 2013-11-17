@@ -139,6 +139,10 @@ PololuQik2s12v10 pmd(PMD_RX, PMD_TX, PMD_RESET);
 
 void setup()
 {
+
+  // Up Baud Rate
+  nh.getHardware()->setBaud(115200);
+
   // ROS Stuff
   nh.initNode();
   
