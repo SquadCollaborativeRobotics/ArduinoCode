@@ -46,9 +46,9 @@ std_msgs::Float32 r_wheel_msg;
 scr_proto::SpeedCommand motor_msg;
 
 // Initialize Publishers
-ros::Publisher left_encoder_pub("left_encoder", &l_enc_msg);
+//ros::Publisher left_encoder_pub("left_encoder", &l_enc_msg);
 ros::Publisher left_wheel_pub("lw_speed", &l_wheel_msg);
-ros::Publisher right_encoder_pub("right_encoder", &l_enc_msg);
+//ros::Publisher right_encoder_pub("right_encoder", &l_enc_msg);
 ros::Publisher right_wheel_pub("rw_speed", &r_wheel_msg);
 
 // Placeholders for wheel speeds in rad/s
@@ -70,13 +70,15 @@ Encoder R_DCMotorEncoder(RIGHT_ENCODER_A_PIN, RIGHT_ENCODER_B_PIN);
 Timer g_TimerEncoder;
 float L_EncoderVelocity = 0; // Radians per second
 long L_LastEncoderValue = 0;
-double L_EncoderAngle = 0; // In revolutions (360.0 degrees = 1.0)
+double L_EncoderDelta = 0; 
+double L_LastEncoderDelta = 0; 
 float R_EncoderVelocity = 0; // Radians per second
 long R_LastEncoderValue = 0;
-double R_EncoderAngle = 0; // In revolutions (360.0 degrees = 1.0)
+double R_EncoderDelta = 0; 
+double R_LastEncoderDelta = 0; 
+double beta = .95;  // Low Pass Parameter for encoder velocity
 
 // Speed Controller Initialization
-
 double L_PIDout = 0;
 double R_PIDout = 0;
 
@@ -84,17 +86,17 @@ double R_PIDout = 0;
 PID L_DCMotorPID(&L_WheelVelocity,
                  &L_PIDout,
                  &lw_cmd_spd,
-                 1.5,
+                 0.75,
                  0.0,
-                 0.1,
+                 0.15,
                  REVERSE);
 
 PID R_DCMotorPID(&R_WheelVelocity,
                  &R_PIDout,
                  &rw_cmd_spd,
-                 1.5,
+                 0.75,
                  0.0,
-                 0.1,
+                 0.15,
                  REVERSE);
 
 // Motor Callbacks
@@ -110,13 +112,13 @@ void updateEncoderReading() {
   
   // Get position in revolutions (includes multiple revolutions)
 // Serial.println(encoderValue);
-  L_EncoderAngle = (double)L_encoderValue / (double)TICKS_PER_REVOLUTION;
-  R_EncoderAngle = (double)R_encoderValue / (double)TICKS_PER_REVOLUTION;
+  L_EncoderDelta = (double)(L_encoderValue - L_LastEncoderValue) * (1-beta) + L_LastEncoderDelta * beta;
+  R_EncoderDelta = (double)(R_encoderValue - R_LastEncoderValue) * (1-beta) + R_LastEncoderDelta * beta;
 // Serial.println(g_EncoderAngle);
   
   // Get velocity in ticks/sec
-  L_EncoderVelocity = 1000.0*(float)(L_encoderValue-L_LastEncoderValue)/(float)ENCODER_TIME_DELAY_MS;
-  R_EncoderVelocity = 1000.0*(float)(R_encoderValue-R_LastEncoderValue)/(float)ENCODER_TIME_DELAY_MS;
+  L_EncoderVelocity = 1000.0*(double)(L_EncoderDelta)/(double)ENCODER_TIME_DELAY_MS;
+  R_EncoderVelocity = 1000.0*(double)(R_EncoderDelta)/(double)ENCODER_TIME_DELAY_MS;
 
   // Convert to revolutions/sec
   L_EncoderVelocity /= (double)TICKS_PER_REVOLUTION;
@@ -129,6 +131,9 @@ void updateEncoderReading() {
   // Set last known encoder ticks
   L_LastEncoderValue = L_encoderValue;
   R_LastEncoderValue = R_encoderValue;
+
+  L_LastEncoderDelta = L_EncoderDelta;
+  R_LastEncoderDelta = R_EncoderDelta;
 }
 
 ros::Subscriber<scr_proto::SpeedCommand> motor_sub("speed_command", MotorCallback);
@@ -150,8 +155,8 @@ void setup()
   nh.subscribe(motor_sub);
   
   // Encoder Pubs
-  nh.advertise(left_encoder_pub);
-  nh.advertise(right_encoder_pub);
+  //nh.advertise(left_encoder_pub);
+  //nh.advertise(right_encoder_pub);
   
   // Wheel Speeds in rad/s
   nh.advertise(right_wheel_pub);
@@ -183,14 +188,14 @@ void loop()
   rm_cmd += R_PIDout;
 
   // Populate messages
-  l_enc_msg.data = lm_cmd;
-  r_enc_msg.data = rm_cmd;
+  //l_enc_msg.data = lm_cmd;
+  //r_enc_msg.data = rm_cmd;
   l_wheel_msg.data = L_WheelVelocity;
   r_wheel_msg.data = R_WheelVelocity;
 
   // Publish Data
-  left_encoder_pub.publish( &l_enc_msg );
-  right_encoder_pub.publish( &r_enc_msg );
+  //left_encoder_pub.publish( &l_enc_msg );
+  //right_encoder_pub.publish( &r_enc_msg );
   left_wheel_pub.publish( &l_wheel_msg );
   right_wheel_pub.publish( &r_wheel_msg );
   
@@ -200,6 +205,6 @@ void loop()
   // Write Speeds to motor driver
   pmd.setSpeeds(lm_cmd, rm_cmd);
   
-  delay(25);
+  delay(30);
 }
 
