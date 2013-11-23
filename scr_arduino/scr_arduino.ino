@@ -76,7 +76,7 @@ float R_EncoderVelocity = 0; // Radians per second
 long R_LastEncoderValue = 0;
 double R_EncoderDelta = 0; 
 double R_LastEncoderDelta = 0; 
-double beta = .95;  // Low Pass Parameter for encoder velocity
+double beta = 0.0;  // Low Pass Parameter for encoder velocity
 
 // Speed Controller Initialization
 double L_PIDout = 0;
