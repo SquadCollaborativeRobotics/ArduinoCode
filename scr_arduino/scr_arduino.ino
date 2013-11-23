@@ -67,7 +67,7 @@ double rw_cmd_spd = 0;
 Encoder L_DCMotorEncoder(LEFT_ENCODER_A_PIN, LEFT_ENCODER_B_PIN);
 Encoder R_DCMotorEncoder(RIGHT_ENCODER_A_PIN, RIGHT_ENCODER_B_PIN);
 
-Timer g_TimerEncoder;
+long last_encoder_time = micros();  // not the best way to get this done... should check existence in Update Wheel Function
 float L_EncoderVelocity = 0; // Radians per second
 long L_LastEncoderValue = 0;
 double L_EncoderDelta = 0; 
@@ -110,6 +110,10 @@ void updateEncoderReading() {
   long L_encoderValue = L_DCMotorEncoder.read();
   long R_encoderValue = R_DCMotorEncoder.read();
   
+  long now = micros();
+  
+  long dt = (now - last_encoder_time);
+  
   // Get position in revolutions (includes multiple revolutions)
 // Serial.println(encoderValue);
   L_EncoderDelta = (double)(L_encoderValue - L_LastEncoderValue) * (1-beta) + L_LastEncoderDelta * beta;
@@ -117,8 +121,8 @@ void updateEncoderReading() {
 // Serial.println(g_EncoderAngle);
   
   // Get velocity in ticks/sec
-  L_EncoderVelocity = 1000.0*(double)(L_EncoderDelta)/(double)ENCODER_TIME_DELAY_MS;
-  R_EncoderVelocity = 1000.0*(double)(R_EncoderDelta)/(double)ENCODER_TIME_DELAY_MS;
+  L_EncoderVelocity = 1000000.0*(double)(L_EncoderDelta)/dt;
+  R_EncoderVelocity = 1000000.0*(double)(R_EncoderDelta)/dt;
 
   // Convert to revolutions/sec
   L_EncoderVelocity /= (double)TICKS_PER_REVOLUTION;
@@ -131,6 +135,8 @@ void updateEncoderReading() {
   // Set last known encoder ticks
   L_LastEncoderValue = L_encoderValue;
   R_LastEncoderValue = R_encoderValue;
+
+  last_encoder_time = now;
 
   L_LastEncoderDelta = L_EncoderDelta;
   R_LastEncoderDelta = R_EncoderDelta;
