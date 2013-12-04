@@ -86,7 +86,7 @@ PID L_DCMotorPID(&L_WheelVelocity,
                  &L_PIDout,
                  &lw_cmd_spd,
                  0.65,
-                 0.001,
+                 0.00,
                  0.10,
                  REVERSE);
 
@@ -94,7 +94,7 @@ PID R_DCMotorPID(&R_WheelVelocity,
                  &R_PIDout,
                  &rw_cmd_spd,
                  0.6,
-                 0.001,
+                 0.00,
                  0.10,
                  REVERSE);
 
