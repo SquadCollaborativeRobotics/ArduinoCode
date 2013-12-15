@@ -81,6 +81,10 @@ PID R_DCMotorPID(&R_WheelVelocity,
                0.15,
                REVERSE);
 
+// Mode Setter -> 0 for Safe Mode
+//             -> 1 for Normal Functionality
+int mode = 0;
+
 EmbeddedCollector::EmbeddedCollector(){
 
   // Initialze ROS communications
@@ -149,10 +153,27 @@ void EmbeddedCollector::initMotors(){
 
 }
 
-// Motor Callbacks
+// Motor Callback
 void EmbeddedCollector::MotorCallback(const scr_proto::SpeedCommand& motor_com){
   lw_cmd_spd = motor_com.left_motor_w;
   rw_cmd_spd = motor_com.right_motor_w;
+}
+
+// Command Callback
+void EmbeddedCollector::CommandCallback(const std_msgs::Int32& mode_msg){
+
+  if(mode_msg.data == 1){
+    mode = mode_msgs.data;
+    nh.loginfo("Arduino Normal Mode Active");
+  }
+  else if(mode_msg.data == 0){
+    mode = mode_msg.data;
+    nh.loginfo("Arduino Safe Mode Active");
+  }
+  else{
+    nh.loginfo("Invalid Mode Command.  Modes are 0 for Safe mode and 1 for normal mode");
+  }
+
 }
 
 
@@ -163,12 +184,14 @@ void EmbeddedCollector::rosInit(ros::NodeHandle_<ArduinoHardware, 5, 5, 256, 256
 
   // Subscriber to speed commands on computer
   ros::Subscriber<scr_proto::SpeedCommand> motor_sub("speed_command", EmbeddedCollector::MotorCallback);
+  ros::Subscriber<std_msgs::Int32> command_sub("arduino_mode", EmbeddedCollector::CommandCallback)
 
   // ROS Stuff
   nh.initNode();
   
   //Command Subscriber
   nh.subscribe(motor_sub);
+  nh.subscribe(command_sub);
   
   // Wheel Speeds in rad/s
   nh.advertise(right_wheel_pub);
@@ -227,6 +250,22 @@ void EmbeddedCollector::controlLoop(){
 
 }
 
+void EmbeddedCollector::safeControlLoop(){
+  // Keep PID from freaking out on resume with 0 command speeds
+  lw_cmd_spd = 0;
+  rw_cmd_spd = 0;
+
+  // Compute New Control Values
+  L_DCMotorPID.Compute();
+  R_DCMotorPID.Compute();
+
+  lm_cmd = 0;
+  rm_cmd = 0;
+
+  // Stop motors directly
+  pmd.setSpeeds(0, 0);
+}
+
 void EmbeddedCollector::publish(){
 
   // Populate messages
@@ -241,15 +280,19 @@ void EmbeddedCollector::publish(){
 
 void EmbeddedCollector::spin(){
 
-  // Handle motor commands
-  controlLoop();
+  // If not in safe mode, can move motors
+  if(mode){
+    // Handle motor commands
+    controlLoop();
+  }
+  else{
+    safeControlLoop();
+  }
+    // Publish data to ROS
+    publish();
 
-  // Publish data to ROS
-  publish();
-
-  // Handle Callbacks
-  nh.spinOnce();
-  
-  delay(30);
-
+    // Handle Callbacks
+    nh.spinOnce();
+    
+    delay(42);
 }

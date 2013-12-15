@@ -77,13 +77,18 @@ class EmbeddedCollector
 	   *  Function that is called when a new command speed is sent from the computer
 	   */
 	  static void MotorCallback(const scr_proto::SpeedCommand&);
+
+    /*
+     *  Function CommandCallback: Responsible for switching modes when new command mode is published
+     */
+    static void CommandCallback(const std_msgs::Int32&);
 	 
-      /*
-       *  Function updateEncoderReading: Responsible for tracking wheel speeds and encoder values
-       *  Pulls in most recent encoder values
-       *  Calculates wheel speeds and converts to rad/s
-       *  Stores all relevant values in class variables
-       */
+    /*
+     *  Function updateEncoderReading: Responsible for tracking wheel speeds and encoder values
+     *  Pulls in most recent encoder values
+     *  Calculates wheel speeds and converts to rad/s
+     *  Stores all relevant values in class variables
+     */
 	  void updateEncoderReading();
 
 	  /*
@@ -93,6 +98,13 @@ class EmbeddedCollector
 	   *  Assings output to Pololu Motor Driver
 	   */
 	  void controlLoop();
+
+    /*
+     *  Function safeControlLoop: Responsible for keeping base still and PID up to date
+     *  Sets commanded speeds to zero, computes PID output, set's output to zero, then
+     *  Sets the stops the motors.
+     */
+    void EmbeddedCollector::safeControlLoop();
 
 	  /*
 	   *  Function publish: Responsible for communicating wheel speeds to ROS computer
