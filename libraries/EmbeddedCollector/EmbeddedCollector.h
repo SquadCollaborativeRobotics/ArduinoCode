@@ -104,7 +104,7 @@ class EmbeddedCollector
      *  Sets commanded speeds to zero, computes PID output, set's output to zero, then
      *  Sets the stops the motors.
      */
-    void EmbeddedCollector::safeControlLoop();
+    void safeControlLoop();
 
 	  /*
 	   *  Function publish: Responsible for communicating wheel speeds to ROS computer

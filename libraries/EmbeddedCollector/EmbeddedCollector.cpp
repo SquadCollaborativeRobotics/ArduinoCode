@@ -163,7 +163,7 @@ void EmbeddedCollector::MotorCallback(const scr_proto::SpeedCommand& motor_com){
 void EmbeddedCollector::CommandCallback(const std_msgs::Int32& mode_msg){
 
   if(mode_msg.data == 1){
-    mode = mode_msgs.data;
+    mode = mode_msg.data;
     nh.loginfo("Arduino Normal Mode Active");
   }
   else if(mode_msg.data == 0){
@@ -184,7 +184,7 @@ void EmbeddedCollector::rosInit(ros::NodeHandle_<ArduinoHardware, 5, 5, 256, 256
 
   // Subscriber to speed commands on computer
   ros::Subscriber<scr_proto::SpeedCommand> motor_sub("speed_command", EmbeddedCollector::MotorCallback);
-  ros::Subscriber<std_msgs::Int32> command_sub("arduino_mode", EmbeddedCollector::CommandCallback)
+  ros::Subscriber<std_msgs::Int32> command_sub("arduino_mode", EmbeddedCollector::CommandCallback);
 
   // ROS Stuff
   nh.initNode();
