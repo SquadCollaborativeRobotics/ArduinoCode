@@ -6,20 +6,6 @@
 
 #include <EmbeddedCollector.h>
 
-// Global Nodehandle object
-ros::NodeHandle_<ArduinoHardware, 5, 5, 256, 256> nh;
-
-// Wheel Speed Messages
-std_msgs::Float32 l_wheel_msg;
-std_msgs::Float32 r_wheel_msg;
-
-// Motors Command Message
-scr_proto::SpeedCommand motor_msg;
-
-// Initialize Publishers
-ros::Publisher left_wheel_pub("lw_speed", &l_wheel_msg);
-ros::Publisher right_wheel_pub("rw_speed", &r_wheel_msg);
-
 // Placeholders for wheel speeds in rad/s
 double L_WheelVelocity;
 double R_WheelVelocity;
@@ -28,13 +14,13 @@ double R_WheelVelocity;
 // Rx, Tx, Reset Pins
 PololuQik2s12v10 pmd(PMD_RX, PMD_TX, PMD_RESET);
 
-// Placeholders for motor commands
-double lm_cmd;
-double rm_cmd;
-
 // Placeholders for speed commands
 double lw_cmd_spd;
 double rw_cmd_spd;
+
+// Placeholders for motor commands
+double lm_cmd;
+double rm_cmd;
 
 // Encoder object initialization
 Encoder L_DCMotorEncoder(LEFT_ENCODER_A_PIN, LEFT_ENCODER_B_PIN);
@@ -85,10 +71,7 @@ PID R_DCMotorPID(&R_WheelVelocity,
 //             -> 1 for Normal Functionality
 int mode = 0;
 
-EmbeddedCollector::EmbeddedCollector(){
-
-  // Initialze ROS communications
-  rosInit(nh);
+void EmbeddedCollector::initialize(){
 
   // Initialize Encoders
   initEncoders();
@@ -153,51 +136,6 @@ void EmbeddedCollector::initMotors(){
 
 }
 
-// Motor Callback
-void EmbeddedCollector::MotorCallback(const scr_proto::SpeedCommand& motor_com){
-  lw_cmd_spd = motor_com.left_motor_w;
-  rw_cmd_spd = motor_com.right_motor_w;
-}
-
-// Command Callback
-void EmbeddedCollector::CommandCallback(const std_msgs::Int32& mode_msg){
-
-  if(mode_msg.data == 1){
-    mode = mode_msg.data;
-    nh.loginfo("Arduino Normal Mode Active");
-  }
-  else if(mode_msg.data == 0){
-    mode = mode_msg.data;
-    nh.loginfo("Arduino Safe Mode Active");
-  }
-  else{
-    nh.loginfo("Invalid Mode Command.  Modes are 0 for Safe mode and 1 for normal mode");
-  }
-
-}
-
-
-void EmbeddedCollector::rosInit(ros::NodeHandle_<ArduinoHardware, 5, 5, 256, 256>& nh){
-
-  // Up Baud Rate
-  nh.getHardware()->setBaud(115200);
-
-  // Subscriber to speed commands on computer
-  ros::Subscriber<scr_proto::SpeedCommand> motor_sub("speed_command", EmbeddedCollector::MotorCallback);
-  ros::Subscriber<std_msgs::Int32> command_sub("arduino_mode", EmbeddedCollector::CommandCallback);
-
-  // ROS Stuff
-  nh.initNode();
-  
-  //Command Subscriber
-  nh.subscribe(motor_sub);
-  nh.subscribe(command_sub);
-  
-  // Wheel Speeds in rad/s
-  nh.advertise(right_wheel_pub);
-  nh.advertise(left_wheel_pub);
-
-}
 
 void EmbeddedCollector::updateEncoderReading() {
   // Get raw ticks
@@ -232,6 +170,32 @@ void EmbeddedCollector::updateEncoderReading() {
 
 }
 
+float* EmbeddedCollector::getWheelVels(){
+
+  float * pointer;
+  float out[1];
+
+  updateEncoderReading();
+  out[0] = L_WheelVelocity;
+  out[1] = R_WheelVelocity;
+  pointer = out;
+  return pointer;
+
+}
+
+void EmbeddedCollector::setMode(int cmd_mode){
+
+  mode = cmd_mode;
+
+}
+
+void EmbeddedCollector::setMotorCommands(float lw_cmd, float rw_cmd){
+
+  lw_cmd_spd = lw_cmd;
+  rw_cmd_spd = rw_cmd;
+
+}
+
 void EmbeddedCollector::controlLoop(){
 
   // Get Freshest Values
@@ -255,6 +219,9 @@ void EmbeddedCollector::safeControlLoop(){
   lw_cmd_spd = 0;
   rw_cmd_spd = 0;
 
+  // Get Freshest Values
+  updateEncoderReading();
+
   // Compute New Control Values
   L_DCMotorPID.Compute();
   R_DCMotorPID.Compute();
@@ -264,18 +231,6 @@ void EmbeddedCollector::safeControlLoop(){
 
   // Stop motors directly
   pmd.setSpeeds(0, 0);
-}
-
-void EmbeddedCollector::publish(){
-
-  // Populate messages
-  l_wheel_msg.data = L_WheelVelocity;
-  r_wheel_msg.data = R_WheelVelocity;
-
-  // Publish Data
-  left_wheel_pub.publish( &l_wheel_msg );
-  right_wheel_pub.publish( &r_wheel_msg );  
-
 }
 
 void EmbeddedCollector::spin(){
@@ -288,11 +243,4 @@ void EmbeddedCollector::spin(){
   else{
     safeControlLoop();
   }
-    // Publish data to ROS
-    publish();
-
-    // Handle Callbacks
-    nh.spinOnce();
-    
-    delay(42);
 }

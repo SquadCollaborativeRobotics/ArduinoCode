@@ -39,25 +39,41 @@ class EmbeddedCollector
 
   public:
 
-    EmbeddedCollector();
     /*
      *  Function spin: Responsible for functionality of embedded code
      *  First turns through the PID motor control Loop   
-     *  Then aggregates the Encoder Data and publishes over ROS
-     *  Finally spins to handle any callbacks
+     *  Then aggregates the Encoder Data and sends to main thread to publish over ROS
      */
-    void spin();	
+    void spin();
+
+    /*
+     *  Function init: Called in Arduino setup.  Responsible for
+     *  initializing all the systems embedded layer depends on.
+     */
+    void initialize();
+
+    /*
+     *  Function getWheelVels: Called from Arduino Wrapper to get the velocities of the wheels
+     *  @ Return -> out[0] : Left Wheel Velocity in rad/s
+     *              out[1] : Right Wheel Velocity in rad/s
+     */
+    float* getWheelVels();
+
+    /*
+     *  Function setMode: Sets the mode of the hardware
+     *  @ Param -> mode : mode of the robot 0 for safe, 1 for active. 
+     */
+    void setMode(int mode);
+
+    /*
+     *  Function setMotorCommands: Sets the motor commanded speeds
+     *  @ Params -> lw_cmd : Commanded left wheel speed in rad/s
+     *              rw_cmd : Commanded right wheel speed in rad/s
+     */
+    void setMotorCommands(float lw_cmd, float rw_cmd);
+	
   
   private:
-      /*
-       *  Function rosInit: Responsible for ROS relationships
-       *  Sets Baud Rate
-       *  Instantiates Subscriber
-       *  Initializes Node
-       *  Exchanges with computer to establish communications
-       */
-	  void rosInit(ros::NodeHandle_<ArduinoHardware, 5, 5, 256, 256>&);
-	  
       /*
        *  Function initMotors: Responsible for starting motor control objects
        *  Initializes variables for control PID controller and motor commands
@@ -71,17 +87,6 @@ class EmbeddedCollector
 	   *  Initializes all parameters needed for use of the Encoders
 	   */
 	  void initEncoders();
-
-	  /*
-	   *  Function MotorCallback:  Responsible for pulling commands into namespace
-	   *  Function that is called when a new command speed is sent from the computer
-	   */
-	  static void MotorCallback(const scr_proto::SpeedCommand&);
-
-    /*
-     *  Function CommandCallback: Responsible for switching modes when new command mode is published
-     */
-    static void CommandCallback(const std_msgs::Int32&);
 	 
     /*
      *  Function updateEncoderReading: Responsible for tracking wheel speeds and encoder values
@@ -106,12 +111,6 @@ class EmbeddedCollector
      */
     void safeControlLoop();
 
-	  /*
-	   *  Function publish: Responsible for communicating wheel speeds to ROS computer
-	   *  Populates wheel speed messages and uses nodehandle to push them over ROS
-	   */
-	  void publish();
-	
 };
 
 #endif
