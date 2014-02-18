@@ -14,7 +14,7 @@ DO NOT connect the 5V output on the Arduino to the 5V output on the qik 2s12v10!
 #include <SoftwareSerial.h>
 #include <PololuQik.h>
 
-PololuQik2s12v10 qik(2, 3, 4);
+PololuQik2s12v10 qik(15, 14, 8);
 
 void setup()
 {

@@ -70,6 +70,8 @@ void spin(){
 void motorCallback(const scr_proto::SpeedCommand& motor_com){
   l_cmd_spd = motor_com.left_motor_w;
   r_cmd_spd = motor_com.right_motor_w;
+
+  ec.setMotorCommands(l_cmd_spd, r_cmd_spd);
 }
 
 ros::Subscriber<scr_proto::SpeedCommand> motor_sub("speed_command", motorCallback);
@@ -99,7 +101,7 @@ void setup()
 {
 
   nh.initNode();
-  //nh.getHardware()->setBaud(115200);
+  nh.getHardware()->setBaud(115200);
   //nh.loginfo("baud rate set");\
 
   // ROS Stuff

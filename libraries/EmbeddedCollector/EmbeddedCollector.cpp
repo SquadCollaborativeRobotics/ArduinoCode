@@ -54,17 +54,17 @@ double R_PIDout;
 PID L_DCMotorPID(&L_WheelVelocity,
                &L_PIDout,
                &lw_cmd_spd,
-               0.75,
-               0.0,
                0.15,
+               0.0,
+               0.015,
                REVERSE);
 
 PID R_DCMotorPID(&R_WheelVelocity,
                &R_PIDout,
                &rw_cmd_spd,
-               0.75,
-               0.0,
                0.15,
+               0.0,
+               0.015,
                REVERSE);
 
 // Mode Setter -> 0 for Safe Mode
