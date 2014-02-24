@@ -227,6 +227,6 @@ void loop()
   // Write Speeds to motor driver
   pmd.setSpeeds(lm_cmd, rm_cmd);
   
-  delay(30);
+  delay(20);
 }
 
