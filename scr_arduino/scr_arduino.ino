@@ -47,8 +47,6 @@ std_msgs::Int32 mode_msg;
 ros::Publisher left_wheel_pub("lw_speed", &l_wheel_msg);
 ros::Publisher right_wheel_pub("rw_speed", &r_wheel_msg);
 
-//os::Time last_encoder_time = nh.now();
-
 double last_encoder_time = micros();
 
 // Placeholders for wheel speeds in rad/s
