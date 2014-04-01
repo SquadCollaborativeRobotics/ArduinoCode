@@ -20,10 +20,10 @@
 #include <SoftwareSerial.h>
 
 // Encoder Pins and Variables
-#define LEFT_ENCODER_A_PIN 2
-#define LEFT_ENCODER_B_PIN 4
-#define RIGHT_ENCODER_A_PIN 3
-#define RIGHT_ENCODER_B_PIN 5
+#define LEFT_ENCODER_A_PIN 3
+#define LEFT_ENCODER_B_PIN 5
+#define RIGHT_ENCODER_A_PIN 2
+#define RIGHT_ENCODER_B_PIN 4
 #define TICKS_PER_REVOLUTION 3200
 #define PI 3.141592654
 
@@ -65,7 +65,6 @@ double rw_cmd_spd = 0;
 Encoder L_DCMotorEncoder(LEFT_ENCODER_A_PIN, LEFT_ENCODER_B_PIN);
 Encoder R_DCMotorEncoder(RIGHT_ENCODER_A_PIN, RIGHT_ENCODER_B_PIN);
 
-Timer g_TimerEncoder;
 float L_EncoderVelocity = 0; // Radians per second
 long L_LastEncoderValue = 0;
 double L_EncoderDelta = 0; 
@@ -74,7 +73,7 @@ float R_EncoderVelocity = 0; // Radians per second
 long R_LastEncoderValue = 0;
 double R_EncoderDelta = 0; 
 double R_LastEncoderDelta = 0; 
-double beta = .90;  // Low Pass Parameter for encoder velocity
+double beta = .50;  // Low Pass Parameter for encoder velocity
 
 // Speed Controller Initialization
 double L_PIDout = 0;
@@ -84,17 +83,17 @@ double R_PIDout = 0;
 PID L_DCMotorPID(&L_WheelVelocity,
                  &L_PIDout,
                  &lw_cmd_spd,
-                 0.15,
-                 0.00,
-                 0.010,
+                 0.50,
+                 0.004,
+                 0.0320,
                  REVERSE);
 
 PID R_DCMotorPID(&R_WheelVelocity,
                  &R_PIDout,
                  &rw_cmd_spd,
-                 0.15,
-                 0.00,
-                 0.010,
+                 0.50,
+                 0.004,
+                 0.0320,
                  REVERSE);
 
 int mode = 0;
