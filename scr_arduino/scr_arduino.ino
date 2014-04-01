@@ -33,7 +33,7 @@
 #define PMD_RESET 8
 
 // Ros Initialization stuff
-ros::NodeHandle_<ArduinoHardware, 10, 10, 256, 256>  nh;
+ros::NodeHandle_<ArduinoHardware, 3, 3, 128, 128>  nh;
 
 // Wheel Speed Messages
 std_msgs::Float32 l_wheel_msg;
@@ -227,6 +227,6 @@ void loop()
   // Write Speeds to motor driver
   pmd.setSpeeds(lm_cmd, rm_cmd);
   
-  delay(20);
+  delay(30);
 }
 
