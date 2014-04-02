@@ -32,6 +32,12 @@
 #define PMD_RX 15
 #define PMD_RESET 8
 
+// Loop Publish Rate
+#define PUB_RATE 33
+
+// Last millis() publish time
+unsigned long last_pub_time = 0;
+
 // Ros Initialization stuff
 ros::NodeHandle_<ArduinoHardware, 3, 3, 128, 128>  nh;
 
@@ -192,40 +198,41 @@ void setup()
 
 void loop()
 {
+  if (millis() - last_pub_time > PUB_RATE)
+  {
+    last_pub_time = millis();
 
-  if(mode == 0){
-    lw_cmd_spd = 0;
-    rw_cmd_spd = 0;
+    if(mode == 0){
+      lw_cmd_spd = 0;
+      rw_cmd_spd = 0;
+    }
+    // Get Freshest Values
+    updateEncoderReading();
+
+    // Compute New Control Values
+    L_DCMotorPID.Compute();
+    R_DCMotorPID.Compute();
+
+    // Update motor command
+    lm_cmd += L_PIDout;
+    rm_cmd += R_PIDout;
+
+   if(mode == 0){
+      lm_cmd = 0;
+      rm_cmd = 0;
+    }
+    // Populate messages
+    l_wheel_msg.data = L_WheelVelocity;
+    r_wheel_msg.data = R_WheelVelocity;
+
+    // Publish Data
+    left_wheel_pub.publish( &l_wheel_msg );
+    right_wheel_pub.publish( &r_wheel_msg );
+    
+    // Write Speeds to motor driver
+    pmd.setSpeeds(lm_cmd, rm_cmd);
   }
-  // Get Freshest Values
-  updateEncoderReading();
 
-  // Compute New Control Values
-  L_DCMotorPID.Compute();
-  R_DCMotorPID.Compute();
-
-  // Update motor command
-  lm_cmd += L_PIDout;
-  rm_cmd += R_PIDout;
-
- if(mode == 0){
-    lm_cmd = 0;
-    rm_cmd = 0;
-  }
-  // Populate messages
-  l_wheel_msg.data = L_WheelVelocity;
-  r_wheel_msg.data = R_WheelVelocity;
-
-  // Publish Data
-  left_wheel_pub.publish( &l_wheel_msg );
-  right_wheel_pub.publish( &r_wheel_msg );
-  
   // Handle Callbacks
   nh.spinOnce();
-  
-  // Write Speeds to motor driver
-  pmd.setSpeeds(lm_cmd, rm_cmd);
-  
-  delay(30);
 }
-
