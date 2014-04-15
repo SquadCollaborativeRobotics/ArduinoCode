@@ -89,17 +89,17 @@ double R_PIDout = 0;
 PID L_DCMotorPID(&L_WheelVelocity,
                  &L_PIDout,
                  &lw_cmd_spd,
-                 0.50,
-                 0.004,
-                 0.0320,
+                 0.950,
+                 0.000,
+                 0.0720,
                  REVERSE);
 
 PID R_DCMotorPID(&R_WheelVelocity,
                  &R_PIDout,
                  &rw_cmd_spd,
-                 0.50,
-                 0.004,
-                 0.0320,
+                 0.950,
+                 0.000,
+                 0.0720,
                  REVERSE);
 
 int mode = 0;
